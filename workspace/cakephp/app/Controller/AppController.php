@@ -33,43 +33,59 @@ App::uses('Controller', 'Controller');
 class AppController extends Controller {
     // this will tell cakek to support php files for the view for rendering
     public $ext = '.php';
+    
 
     // include the Post Model
     public $uses = array(
-        'Post'
+        'Post',
+        'User'
     );
 
     // - include components
     public $components = array(
         'Flash',
         'Auth' => array(
+            'loginAction' => array(
+                'controller' => 'home',
+                'action' => 'login'
+            ),
             // if the user is logged in
             'loginRedirect' => array(
-                'controller' => 'users',
+                'controller' => 'home',
                 'action' => 'index'
             ),
 
             // if teh user is not logged in AND accesses a forbidden action,
             'logoutRedirect' => array(
-                'controller' => 'pages',
-                'action' => 'display',
-                'home'
+                'controller' => 'home',
+                'action' => 'login'
             ),
             'authenticate' => array(
                 'Form' => array(
-                    // 'passwordHasher' => 'Blowfish',
-                    // if you want to customize the fields for logging in
-                    // 'fields'=>array('username'=>'email','password'=>'password')
                 )
             )
         )
     );
+
     
-    public function beforeFilter(){
-        parent::beforeFilter();
-        
-        // global restriction
-        // $this->Auth->allow('index', 'view', 'add');
-        $this->set('currentUser', $this->Auth->user());
+
+    
+    public function getUserData() {
+        $userId = $this->Auth->user('id');
+        $user = $this->User->findById($userId);
+        return $user;
     }
+
+    public function beforeFilter() {
+        parent::beforeFilter();
+        $userData = $this->getUserData();
+
+        if (!empty($userData) && isset($userData['User'])){
+            $this->set('currentUser', $userData['User']);
+        } else {
+            $this->set('currentUser', array());
+        }
+        date_default_timezone_set('Asia/Manila');
+    }
+    
 }
