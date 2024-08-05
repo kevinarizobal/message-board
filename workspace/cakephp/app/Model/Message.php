@@ -33,11 +33,11 @@ class Message extends AppModel {
     
         public $validate = array(
             'content' => array(
-                'rule' => 'notEmpty',
+                'rule' => 'notBlank',
                 'message' => 'Please enter a message.'
             ),
             'recipient' => array(
-                'rule' => 'notEmpty',
+                'rule' => 'notBlank',
                 'message' => 'Please select a recipient.'
             )
 
