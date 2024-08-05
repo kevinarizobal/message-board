@@ -5,7 +5,7 @@
     <div id="messageContainer" class="bottom-4 shadow relative w-full max-w-4xl overflow-y-scroll bg-white border border-gray-100 rounded-lg dark:bg-gray-700 dark:border-gray-600 h-96 mx-auto">
         <ul id="messageList">
             <?php foreach ($messages as $message): ?>
-                <li class="border-b border-gray-100 dark:border-gray-600 flex hover:bg-gray-50 dark:hover:bg-gray-800">
+                <li class="message-row border-b border-gray-100 dark:border-gray-600 flex hover:bg-gray-50 dark:hover:bg-gray-800">
                     <a href="/cakephp/profile/view/<?= htmlspecialchars($message['users']['id'], ENT_QUOTES, 'UTF-8') ?>" class="flex self-center ml-2">
                         <img class="me-3 rounded-full w-11 h-11 border border-gray-800 cursor-pointer" src="<?= htmlspecialchars($this->Html->url('/' . $message['users']['profile_image']), ENT_QUOTES, 'UTF-8') ?>" alt="User Avatar">
                     </a>
@@ -35,8 +35,6 @@
                             </p>
                         </div>
                     </a>
-                </li>
-                <li class="border-b border-gray-100 dark:border-gray-600 flex hover:bg-gray-50 dark:hover:bg-gray-800">
                     <button class="delete-button text-gray-500 ml-auto p-2" data-id="<?= $message['messages']['id'] ?>">
                         <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="#333333" viewBox="0 0 4 15">
                             <path d="M3.5 1.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm0 6.041a1.5 1.5 0 1 1-3 0 0 1 3 0Zm0 5.959a1.5 1.5 0 1 1-3 0 0 1 3 0Z" />
@@ -92,29 +90,26 @@
             .catch(error => console.error('Error fetching messages:', error));
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        document.querySelectorAll('.delete-button').forEach(button => {
-            button.addEventListener('click', function() {
-                const messageId = this.getAttribute('data-id');
-                if (confirm('Are you sure you want to delete this message?')) {
-                    fetch(`/cakephp/messages/delete/${messageId}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Content-Type': 'application/json',
-                        },
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            const messageElement = document.getElementById(`message-${messageId}`);
-                            messageElement.style.opacity = 0;
-                            setTimeout(() => messageElement.remove(), 300);
-                        } else {
-                            alert('Failed to delete message.');
-                        }
-                    })
-                    .catch(error => console.error('Error:', error));
+        $(document).ready(function() {
+        $('.delete-button').click(function() {
+            var messageId = $(this).data('id');
+            var $messageRow = $(this).closest('li');
+
+            $.ajax({
+                url: '/cakephp/messages/deleteAll/' + messageId,
+                type: 'POST',
+                success: function(response) {
+                    response = JSON.parse(response);
+                    if (response.status === 'success') {
+                        $messageRow.fadeOut(300, function() {
+                            $(this).remove();
+                        });
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function() {
+                    alert('Error deleting message.');
                 }
             });
         });
