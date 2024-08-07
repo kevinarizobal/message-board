@@ -101,12 +101,6 @@
         <?php endforeach; ?>
     </div>
 
-    <div class="mt-5">
-        <button id="showMoreBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700">
-            Show More
-        </button>
-    </div>
-
     <div class=" w-full shadow max-w-2xl mt-2  bg-white border border-gray-100 rounded-lg dark:bg-gray-800 dark:border-gray-600">
         <form id="replyForm" method="post" autocomplete="off">
             <div class="flex items-center px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700">
