@@ -5,7 +5,7 @@ class MessagesController extends AppController {
 	// For Main/Index Page of Message (Pagination)
 	public function index($page = 1) {
 		$currentUserID = $this->Auth->user('id');
-		$limit = 2; // Number of messages per page
+		$limit = 10; // Number of messages per page
 		$offset = ($page - 1) * $limit;
 
 		$currentUsersMessageList = $this->Message->query(
@@ -146,16 +146,52 @@ class MessagesController extends AppController {
 		}
 	}
 
+	// public function delete($id = null) {
+	// 	$this->autoRender = false;
+	// 	$this->response->type('json');
+	
+	// 	if (!$id) {
+	// 		throw new NotFoundException(__('Invalid message'));
+	// 	}
+	
+	// 	$message = $this->Message->findById($id);
+	
+	// 	if (!$message) {
+	// 		$response = array(
+	// 			'status' => 'error',
+	// 			'message' => 'Message not found.',
+	// 		);
+	// 	} else {
+	// 		$currentUserID = $this->Auth->user('id');
+	// 		if ($message['Message']['sender_id'] == $currentUserID || $message['Message']['receiver_id'] == $currentUserID) {
+	// 			// Soft delete by setting status to 0
+	// 			$message['Message']['status'] = 0;
+	// 			$this->Message->save($message);
+	// 			$response = array(
+	// 				'status' => 'success',
+	// 				'message' => 'Message deleted.',
+	// 			);
+	// 		} else {
+	// 			$response = array(
+	// 				'status' => 'error',
+	// 				'message' => 'You are not authorized to delete this message.',
+	// 			);
+	// 		}
+	// 	}
+	
+	// 	$this->response->body(json_encode($response));
+	// }
+
 	public function delete($id = null) {
 		$this->autoRender = false;
 		$this->response->type('json');
-	
+		
 		if (!$id) {
 			throw new NotFoundException(__('Invalid message'));
 		}
-	
+		
 		$message = $this->Message->findById($id);
-	
+		
 		if (!$message) {
 			$response = array(
 				'status' => 'error',
@@ -167,7 +203,7 @@ class MessagesController extends AppController {
 				// Soft delete by setting status to 0
 				$message['Message']['status'] = 0;
 				$this->Message->save($message);
-
+	
 				$response = array(
 					'status' => 'success',
 					'message' => 'Message deleted.',
@@ -179,54 +215,18 @@ class MessagesController extends AppController {
 				);
 			}
 		}
-	
+		
 		$this->response->body(json_encode($response));
 	}
 
-	public function deleteAll($id = null) {
-		$this->autoRender = false;
-		$this->response->type('json');
-	
-		if (!$id) {
-			$response = array(
-				'status' => 'error',
-				'message' => 'Invalid message ID.',
-			);
-			echo json_encode($response);
-			return;
-		}
-	
-		$message = $this->Message->findById($id);
-	
-		if (!$message) {
-			$response = array(
-				'status' => 'error',
-				'message' => 'Message not found.',
-			);
-		} else {
-			$currentUserID = $this->Auth->user('id');
-			if ($message['Message']['sender_id'] == $currentUserID || $message['Message']['receiver_id'] == $currentUserID) {
-				// Soft delete the message itself
-				$this->Message->delete($id);
-	
-				// Assuming you have a Conversation model linked to Message
-				$this->Conversation->deleteAll(array('Conversation.message_id' => $id), false);
-	
-				$response = array(
-					'status' => 'success',
-					'message' => 'Message and related conversations deleted.',
-				);
-			} else {
-				$response = array(
-					'status' => 'error',
-					'message' => 'You are not authorized to delete this message.',
-				);
-			}
-		}
-	
-		echo json_encode($response);
+	// Example of model callback for soft delete
+	public function beforeDelete($cascade = true) {
+	// Assuming related models are defined as associations
+    // Set the status to 0 (soft delete) instead of removing the record
+    $this->id = $this->id; // Ensure the id is set
+    $this->saveField('status', 0); // Soft delete
+    return false; // Prevent actual deletion if using soft delete
 	}
-	// Search Message Conversation
 
 	public function findMessage() {
 		$this->autoRender = false;
