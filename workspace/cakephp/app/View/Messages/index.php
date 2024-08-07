@@ -35,12 +35,13 @@
                             </p>
                         </div>
                     </a>
-                    <button class="delete-button text-gray-500 ml-auto p-2" data-id="<?= $message['messages']['id'] ?>">
-                        <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="#333333" viewBox="0 0 4 15">
-                            <path d="M3.5 1.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm0 6.041a1.5 1.5 0 1 1-3 0 0 1 3 0Zm0 5.959a1.5 1.5 0 1 1-3 0 0 1 3 0Z" />
+                    <button class="delete-message-btn" data-message-id="<?= $message['messages']['id'] ?>" aria-label="Delete Message">
+                        <svg class="w-6 h-6 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
-                    </button>
+                    </button>    
                 </li>
+                
             <?php endforeach; ?>
         </ul>
     </div>
@@ -90,30 +91,41 @@
             .catch(error => console.error('Error fetching messages:', error));
     }
 
-        $(document).ready(function() {
-        $('.delete-button').click(function() {
-            var messageId = $(this).data('id');
-            var $messageRow = $(this).closest('li');
-
-            $.ajax({
-                url: '/cakephp/messages/deleteAll/' + messageId,
-                type: 'POST',
-                success: function(response) {
-                    response = JSON.parse(response);
-                    if (response.status === 'success') {
-                        $messageRow.fadeOut(300, function() {
-                            $(this).remove();
-                        });
-                    } else {
-                        alert(response.message);
+    document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.delete-message-btn').forEach(function(button) {
+        button.addEventListener('click', function() {
+            const messageId = this.getAttribute('data-message-id');
+            
+            // Confirm deletion
+            if (confirm('Are you sure you want to delete this message?')) {
+                fetch(`/cakephp/messages/delete/${messageId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
                     }
-                },
-                error: function() {
-                    alert('Error deleting message.');
-                }
-            });
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Find the message row and fade out
+                        const messageRow = this.closest('.message-row');
+                        messageRow.style.transition = 'opacity 0.5s';
+                        messageRow.style.opacity = '0';
+                        
+                        // Remove the message row after fade out
+                        setTimeout(() => {
+                            messageRow.remove();
+                        }, 500);
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => console.error('Error deleting message:', error));
+            }
         });
     });
+});
+
 
 </script>
 
