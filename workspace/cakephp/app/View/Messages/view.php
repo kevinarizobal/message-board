@@ -90,15 +90,21 @@
                                 <button data-modal-toggle="deleteModal<?= $messageDetail['messages']['id'] ?>" type="button" class="py-2 px-3 text-sm font-medium text-gray-500 bg-white rounded-lg border border-gray-200 hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-primary-300 hover:text-gray-900 focus:z-10 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-600">
                                     Cancel
                                 </button>
-                                <a id="deleteMessage" href="/cakephp/messages/delete/<?= $messageDetail['messages']['id'] ?>" data-modal-toggle="deleteModal<?= $messageDetail['messages']['id'] ?>" class="py-2 px-3 text-sm font-medium text-center text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-red-900">
+                                <button id="deleteMessage" href="/cakephp/messages/delete/<?= $messageDetail['messages']['id'] ?>" data-modal-toggle="deleteModal<?= $messageDetail['messages']['id'] ?>" class="py-2 px-3 text-sm font-medium text-center text-white bg-red-600 rounded-lg hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 dark:bg-red-500 dark:hover:bg-red-600 dark:focus:ring-red-900">
                                     Okay
-                                </a>
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
             <?php endif; ?>
         <?php endforeach; ?>
+    </div>
+
+    <div class="mt-5">
+        <button id="showMoreButton" data-page="1" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg shadow hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+            Show More
+        </button>
     </div>
 
     <div class=" w-full shadow max-w-2xl mt-2  bg-white border border-gray-100 rounded-lg dark:bg-gray-800 dark:border-gray-600">
@@ -157,37 +163,38 @@
         });
 
 
-        $(document).ready(function() {
+        $(document).ready(function () {
             const messageContainer = $('#messageContainer');
             messageContainer.scrollTop(messageContainer[0].scrollHeight);
+
             const param = <?= $this->request->params['pass'][0] ?>;
 
             // Delete message
-            $(document).on('click', '#deleteMessage', function(e) {
+            $(document).on('click', '#deleteMessage', function (e) {
                 e.preventDefault();
                 const $this = $(this);
+                const messageDiv = $this.closest('.message');
 
                 $.ajax({
                     url: $this.attr('href'),
                     type: 'POST',
-                    success: function(response) {
+                    success: function (response) {
                         response = JSON.parse(response);
                         if (response.status === 'success') {
-                            // Find the message div and fade out
-                            const messageId = $this.closest('.message').attr('id');
-                            $(`#${messageId}`).fadeOut('slow', function() {
+                            messageDiv.fadeOut('slow', function () {
                                 $(this).remove();
                             });
                         } else {
                             alert(response.message);
                         }
                     },
-                    error: function() {
+                    error: function () {
                         alert('Error deleting message.');
                     }
                 });
             });
         });
+
 
         
         $(document).on('submit', '#findMessageForm', (e) => {
@@ -247,28 +254,55 @@
             isHighlighted = ($('.currentUserMessage, .recipientUserMessage').find('span').length > 0);
         });
 
-        setInterval(() => {
-            $.get('/cakephp/messages/view/' + param, (data) => {
-                const newMessages = $(data).find('#messageContainer').html();
-                const $newMessages = $(newMessages);
+        // setInterval(() => {
+            // $.get('/cakephp/messages/view/' + param, (data) => {
+            //     const newMessages = $(data).find('#messageContainer').html();
+            //     const $newMessages = $(newMessages);
 
-                //highlights
-                $newMessages.find('.currentUserMessage, .recipientUserMessage').each(function() {
-                    const text = $(this).text();
-                    const regex = new RegExp($('#findMessageSearch').val().trim(), 'gi');
-                    const newHtml = text.replace(regex, match => `<span class="bg-yellow-200">${match}</span>`);
-                    $(this).html(newHtml);
+               
+            //     $newMessages.find('.currentUserMessage, .recipientUserMessage').each(function() {
+            //         const text = $(this).text();
+            //         const regex = new RegExp($('#findMessageSearch').val().trim(), 'gi');
+            //         const newHtml = text.replace(regex, match => `<span class="bg-yellow-200">${match}</span>`);
+            //         $(this).html(newHtml);
+            //     });
+
+            //     messageContainer.html($newMessages);
+
+            //     if (!isUserScrolling) {
+            //         initFlowbite();
+            //         messageContainer.scrollTop(messageContainer[0].scrollHeight);
+            //     }
+            // });
+            //     initFlowbite();
+            // }, 3000);
+            setInterval(() => {
+            $(document).ready(function() {
+                const messageContainer = $('#messageContainer');
+                messageContainer.scrollTop(messageContainer[0].scrollHeight);
+
+                $(document).on('click', '#showMoreButton', function() {
+                    const button = $(this);
+                    const currentPage = button.data('page');
+                    const nextPage = currentPage + 1;
+                    const recipientID = <?= $recipientID ?>;
+
+                    $.ajax({
+                        url: '/cakephp/messages/view/' + recipientID + '/' + nextPage,
+                        type: 'GET',
+                        success: function(response) {
+                            const newMessages = $(response).find('#messageContainer').html();
+                            $('#messageContainer').append(newMessages);
+                            button.data('page', nextPage);
+                        },
+                        error: function() {
+                            alert('Error loading more messages.');
+                        }
+                    });
                 });
-
-                messageContainer.html($newMessages);
-
-                if (!isUserScrolling) {
-                    initFlowbite();
-                    messageContainer.scrollTop(messageContainer[0].scrollHeight);
-                }
-            });
+            }); 
             initFlowbite();
         }, 3000);
-
+    
     });
 </script>
