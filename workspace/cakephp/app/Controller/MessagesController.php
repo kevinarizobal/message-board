@@ -5,29 +5,49 @@ class MessagesController extends AppController {
 	public function deleteConversation($userId = null) {
 		$this->autoRender = false;
 		$this->response->type('json');
-		
+	
 		$currentUserID = $this->Auth->user('id');
-		
 		if (!$currentUserID) {
 			throw new NotFoundException(__('Invalid user'));
 		}
 	
-		// Delete entire conversation
-		$this->Message->deleteAll(array(
-			'OR' => array(
-				'Message.sender_id' => $currentUserID,
-				'Message.receiver_id' => $currentUserID
-			),
-			'Message.status' => 1
+		// Check if the user is part of the conversation
+		$message = $this->Message->find('first', array(
+			'conditions' => array(
+				'OR' => array(
+					'Message.sender_id' => $currentUserID,
+					'Message.receiver_id' => $currentUserID
+				)
+			)
 		));
 	
-		$response = array(
-			'status' => 'success',
-			'message' => 'Conversation deleted.',
-		);
+		if ($message) {
+			// Soft delete the conversation by updating all messages' status to 0
+			$this->Message->updateAll(
+				array('Message.status' => 0),
+				array(
+					'OR' => array(
+						'Message.sender_id' => $currentUserID,
+						'Message.receiver_id' => $currentUserID
+					)
+				)
+			);
+	
+			$response = array(
+				'status' => 'success',
+				'message' => 'Conversation deleted.',
+			);
+		} else {
+			$response = array(
+				'status' => 'error',
+				'message' => 'Conversation not found or unauthorized.',
+			);
+		}
 	
 		$this->response->body(json_encode($response));
 	}
+	
+	
 	
 	// For Main/Index Page of Message (Pagination)
 	public function index($page = 1) {
