@@ -1,5 +1,4 @@
- <br>
- <section class="flex items-center flex-col justify-center min-h-screen">
+<section class="flex items-center flex-col justify-center min-h-screen">
     <h1 class="text-black dark:text-white text-5xl mb-10 font-medium ">Message List</h1>
 
     <div id="messageContainer" class="bottom-4 shadow relative w-full max-w-4xl overflow-y-scroll bg-white border border-gray-100 rounded-lg dark:bg-gray-700 dark:border-gray-600 h-96 mx-auto">
@@ -35,13 +34,12 @@
                             </p>
                         </div>
                     </a>
-                    <button class="delete-message-btn" data-message-id="<?= $message['messages']['id'] ?>" aria-label="Delete Message">
+                    <button class="delete-conversation-btn" data-user-id="<?= $message['users']['id'] ?>" aria-label="Delete Conversation">
                         <svg class="w-6 h-6 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
-                    </button>    
-                </li>
-                
+                    </button>
+                </li> 
             <?php endforeach; ?>
         </ul>
     </div>
@@ -62,8 +60,6 @@
 </section>
 
 <script>
-    
-    
     let page = <?= $page ?>;
 
     document.getElementById('showMoreBtn').addEventListener('click', function() {
@@ -90,15 +86,16 @@
             })
             .catch(error => console.error('Error fetching messages:', error));
     }
-
-    document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.delete-message-btn').forEach(function(button) {
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.delete-conversation-btn').forEach(function(button) {
         button.addEventListener('click', function() {
-            const messageId = this.getAttribute('data-message-id');
+            const userId = this.getAttribute('data-user-id');
             
             // Confirm deletion
-            if (confirm('Are you sure you want to delete this message?')) {
-                fetch(`/cakephp/messages/delete/${messageId}`, {
+            if (confirm('Are you sure you want to delete this conversation?')) {
+                fetch(`/cakephp/messages/deleteConversation/${userId}`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json'
@@ -107,25 +104,15 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        // Find the message row and fade out
-                        const messageRow = this.closest('.message-row');
-                        messageRow.style.transition = 'opacity 0.5s';
-                        messageRow.style.opacity = '0';
-                        
-                        // Remove the message row after fade out
-                        setTimeout(() => {
-                            messageRow.remove();
-                        }, 500);
+                        // Update messages
+                        updateMessages();
                     } else {
                         alert(data.message);
                     }
                 })
-                .catch(error => console.error('Error deleting message:', error));
+                .catch(error => console.error('Error deleting conversation:', error));
             }
         });
     });
 });
-
-
 </script>
-
