@@ -114,161 +114,130 @@
             </div>
         </form>
     </div>
-</section>
 
+    <?php if ($currentPage < $totalPages) : ?>
+        <div class="mt-5">
+            <button id="showMoreBtn" data-page="<?= $currentPage + 1 ?>" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700">
+                Show More
+            </button>
+        </div>
+    <?php endif; ?>
+
+
+
+</section>
 
 <script>
 
+   
+</script>
+
+<script>
+    $(document).ready(function() {
+    const messageContainer = $('#messageContainer');
+    const param = <?= json_encode($recipientID) ?>; // Ensure this is correctly outputting the recipient ID
+    const totalPages = <?= $totalPages ?>; // Ensure this is correctly outputting the total pages count
+
+    // Function to load more messages
+    $('#showMoreBtn').on('click', function() {
+        const nextPage = $(this).data('page');
+
+        $.get('/cakephp/messages/view/' + param + '?page=' + nextPage, function(data) {
+            const newMessages = $(data).find('#messageContainer').html();
+            messageContainer.append(newMessages);
+            $('#showMoreBtn').data('page', nextPage + 1);
+
+            // Hide the button if there are no more pages to load
+            if (nextPage >= totalPages) {
+                $('#showMoreBtn').hide();
+            }
+        });
+    });
+    
     $(document).ready(function() {
         const messageContainer = $('#messageContainer');
-        messageContainer.scrollTop(messageContainer[0].scrollHeight);
         const param = <?= $this->request->params['pass'][0] ?>;
 
-        $(document).on('submit', '#replyForm', function(e) {
+        function loadMessages() {
+            $.get('/cakephp/messages/view/' + param, (data) => {
+                const newMessages = $(data).find('#messageContainer').html();
+                messageContainer.html(newMessages);
+                messageContainer.scrollTop(messageContainer[0].scrollHeight);
+                initFlowbite();
+            });
+        }
+
+        function handleResponse(response) {
+            response = JSON.parse(response);
+            if (response.status === 'success') {
+                $('#chat').val('');
+                loadMessages();
+            } else {
+                alert('Failed to send message.');
+            }
+        }
+
+        $('#replyForm').on('submit', function(e) {
             e.preventDefault();
-
-            const param = <?= $this->request->params['pass'][0] ?>
-
             $.ajax({
                 url: '/cakephp/messages/reply/' + param,
                 type: 'POST',
-                data: {
-                    reply: $('#chat').val()
-                },
-                success: (response) => {
+                data: { reply: $('#chat').val() },
+                success: handleResponse,
+                error: () => alert('Error sending message.')
+            });
+        });
+
+        $(document).on('click', '#deleteMessage', function(e) {
+            e.preventDefault();
+            $.ajax({
+                url: $(this).attr('href'),
+                type: 'POST',
+                success: function(response) {
                     response = JSON.parse(response);
                     if (response.status === 'success') {
-                        $('#chat').val('');
-                        $.get('/cakephp/messages/view/' + param, (data) => {
-                            const newMessages = $(data).find('#messageContainer').html();
-
-                            $('#messageContainer').html(newMessages);
-                            messageContainer.scrollTop(messageContainer[0].scrollHeight);
-
-                            initFlowbite();
-                        });
+                        $(this).closest('.message').fadeOut('slow', function() { $(this).remove(); });
                     } else {
-                        alert('Failed to send message.');
+                        alert(response.message);
                     }
                 },
-                error: () => {
-                    alert('Error sending message.');
-                }
+                error: () => alert('Error deleting message.')
             });
         });
 
-
-        $(document).ready(function () {
-            const messageContainer = $('#messageContainer');
-            messageContainer.scrollTop(messageContainer[0].scrollHeight);
-
-            const param = <?= $this->request->params['pass'][0] ?>;
-
-           
-            $(document).on('click', '#deleteMessage', function (e) {
-                e.preventDefault();
-                const $this = $(this);
-                const messageDiv = $this.closest('.message');
-
-                $.ajax({
-                    url: $this.attr('href'),
-                    type: 'POST',
-                    success: function (response) {
-                        response = JSON.parse(response);
-                        if (response.status === 'success') {
-                            messageDiv.fadeOut('slow', function () {
-                                $(this).remove();
-                            });
-                        } else {
-                            alert(response.message);
-                        }
-                    },
-                    error: function () {
-                        alert('Error deleting message.');
-                    }
-                });
-            });
-        });
-
-        $(document).on('submit', '#findMessageForm', (e) => {
+        $('#findMessageForm').on('submit', function(e) {
             e.preventDefault();
             const findMessage = $('#findMessageSearch').val().trim();
-            const param = <?= $this->request->params['pass'][0] ?>;
-
             if (findMessage === '') {
                 alert('Please enter a search term.');
                 return;
             }
-
             $.ajax({
                 url: '/cakephp/messages/findMessage/',
                 type: 'GET',
-                data: {
-                    findMessage: findMessage,
-                    recipientID: param
-                },
+                data: { findMessage: findMessage, recipientID: param },
                 dataType: 'json',
-                success: (response) => {
+                success: function(response) {
                     if (response.status === 'success') {
-
-                        $('.currentUserMessage, .recipientUserMessage').each(function() {
-                            $(this).html($(this).text());
-                        });
-
-
                         $('.currentUserMessage, .recipientUserMessage').each(function() {
                             const text = $(this).text();
                             const regex = new RegExp(findMessage, 'gi');
                             const newHtml = text.replace(regex, match => `<span class="bg-yellow-200">${match}</span>`);
                             $(this).html(newHtml);
                         });
-
                         initFlowbite();
                     } else {
                         alert(response.message);
                     }
                 },
-                error: () => {
-                    alert('An error occurred while searching for messages.');
-                }
+                error: () => alert('An error occurred while searching for messages.')
             });
         });
 
-        let isUserScrolling = false;
-        let isHighlighted = false;
+        // setInterval(loadMessages, 3000);
+    });
 
-
-        messageContainer.on('scroll', () => {
-            const scrollHeight = messageContainer[0].scrollHeight;
-            const scrollTop = messageContainer.scrollTop();
-            const clientHeight = messageContainer[0].clientHeight;
-
-            isUserScrolling = (scrollTop + clientHeight < scrollHeight - 10);
-            isHighlighted = ($('.currentUserMessage, .recipientUserMessage').find('span').length > 0);
-        });
-
-        setInterval(() => {
-            $.get('/cakephp/messages/view/' + param, (data) => {
-                const newMessages = $(data).find('#messageContainer').html();
-                const $newMessages = $(newMessages);
-
-               
-                $newMessages.find('.currentUserMessage, .recipientUserMessage').each(function() {
-                    const text = $(this).text();
-                    const regex = new RegExp($('#findMessageSearch').val().trim(), 'gi');
-                    const newHtml = text.replace(regex, match => `<span class="bg-yellow-200">${match}</span>`);
-                    $(this).html(newHtml);
-                });
-
-                messageContainer.html($newMessages);
-
-                if (!isUserScrolling) {
-                    initFlowbite();
-                    messageContainer.scrollTop(messageContainer[0].scrollHeight);
-                }
-            });
-                initFlowbite();
-            }, 3000);
+    setInterval(loadMessages, 5000);
 
     });
 </script>
