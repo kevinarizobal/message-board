@@ -234,10 +234,8 @@
             });
         });
 
-        // setInterval(loadMessages, 3000);
+        setInterval(loadMessages, 3000);
     });
-
-    setInterval(loadMessages, 5000);
 
     });
 </script>
