@@ -8,15 +8,15 @@ class MessagesController extends AppController {
 		
 		$currentUserID = $this->Auth->user('id');
 		
-		if (!$userId) {
+		if (!$currentUserID) {
 			throw new NotFoundException(__('Invalid user'));
 		}
 	
 		// Delete entire conversation
 		$this->Message->deleteAll(array(
 			'OR' => array(
-				'Message.sender_id' => $userId,
-				'Message.receiver_id' => $userId
+				'Message.sender_id' => $currentUserID,
+				'Message.receiver_id' => $currentUserID
 			),
 			'Message.status' => 1
 		));
