@@ -33,7 +33,7 @@
                                 </span>
                             </p>
                         </div>
-                    </a>
+                    </a>    
                     <button class="delete-conversation-btn" data-user-id="<?= $message['users']['id'] ?>" aria-label="Delete Conversation">
                         <svg class="w-6 h-6 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
