@@ -99,15 +99,54 @@ class MessagesController extends AppController {
 
 	// Display Messages From Sender to Receiver or Receiver to Sender
 
+	// public function view($id = null) {
+	// 	$currentUserID = $this->Auth->user('id');
+	// 	$recipientID = $id;
+
+	// 	if ($recipientID == $currentUserID) {
+	// 		$this->Flash->error(__('You cannot send a message to yourself.'));
+	// 		return $this->redirect(array('action' => 'index'));
+	// 	}
+
+	// 	$messageDetails = $this->Message->query(
+	// 		'SELECT messages.*, sender_users.name as sender_name, sender_users.profile_image, receiver_users.name as receiver_name, receiver_users.profile_image
+	// 		FROM messages
+	// 		JOIN users as sender_users ON sender_users.id = messages.sender_id
+	// 		JOIN users as receiver_users ON receiver_users.id = messages.receiver_id
+	// 		WHERE ((messages.sender_id = ' . $currentUserID . ' AND messages.receiver_id = ' . $recipientID . ') 
+	// 		OR (messages.sender_id = ' . $recipientID . ' AND messages.receiver_id = ' . $currentUserID . '))
+	// 		AND (messages.status = 1)
+	// 		ORDER BY messages.created_at ASC'
+	// 	);
+
+	// 	$recipientInfo = $this->User->query(
+	// 		'SELECT name, profile_image FROM users WHERE id = ' . $recipientID
+	// 	);
+
+	// 	$this->set('messageDetails', $messageDetails);
+	// 	$this->set('currentUserID', $currentUserID);
+	// 	$this->set('recipientID', $recipientID);
+
+	// 	$this->set('recipientImage', $recipientInfo[0]['users']['profile_image']);
+	// 	$this->set('recipientName', $recipientInfo[0]['users']['name']);
+	// }
+
+
+
 	public function view($id = null) {
 		$currentUserID = $this->Auth->user('id');
 		$recipientID = $id;
-
+		$limit = 10; // Number of messages per page
+		$page = $this->request->query('page') ?: 1; // Get the current page from query parameters
+	
 		if ($recipientID == $currentUserID) {
 			$this->Flash->error(__('You cannot send a message to yourself.'));
 			return $this->redirect(array('action' => 'index'));
 		}
-
+	
+		// Calculate offset
+		$offset = ($page - 1) * $limit;
+	
 		$messageDetails = $this->Message->query(
 			'SELECT messages.*, sender_users.name as sender_name, sender_users.profile_image, receiver_users.name as receiver_name, receiver_users.profile_image
 			FROM messages
@@ -116,22 +155,36 @@ class MessagesController extends AppController {
 			WHERE ((messages.sender_id = ' . $currentUserID . ' AND messages.receiver_id = ' . $recipientID . ') 
 			OR (messages.sender_id = ' . $recipientID . ' AND messages.receiver_id = ' . $currentUserID . '))
 			AND (messages.status = 1)
-			ORDER BY messages.created_at ASC'
+			ORDER BY messages.created_at ASC
+			LIMIT ' . $limit . ' OFFSET ' . $offset
 		);
-
+	
+		$totalMessages = $this->Message->query(
+			'SELECT COUNT(*) as count
+			FROM messages
+			WHERE ((messages.sender_id = ' . $currentUserID . ' AND messages.receiver_id = ' . $recipientID . ') 
+			OR (messages.sender_id = ' . $recipientID . ' AND messages.receiver_id = ' . $currentUserID . '))
+			AND (messages.status = 1)'
+		);
+	
+		$totalMessages = $totalMessages[0][0]['count'];
+		$totalPages = ceil($totalMessages / $limit);
+	
 		$recipientInfo = $this->User->query(
 			'SELECT name, profile_image FROM users WHERE id = ' . $recipientID
 		);
-
+	
 		$this->set('messageDetails', $messageDetails);
 		$this->set('currentUserID', $currentUserID);
 		$this->set('recipientID', $recipientID);
-
 		$this->set('recipientImage', $recipientInfo[0]['users']['profile_image']);
 		$this->set('recipientName', $recipientInfo[0]['users']['name']);
+		$this->set('totalPages', $totalPages);
+		$this->set('currentPage', $page);
 	}
-
 	
+
+
 	// Insert/Reply Message to User
 
 	public function reply($id = null) {
