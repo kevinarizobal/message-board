@@ -2,6 +2,33 @@
 class MessagesController extends AppController {
 	public $uses = ['Message', 'User'];
 	
+	public function deleteConversation($userId = null) {
+		$this->autoRender = false;
+		$this->response->type('json');
+		
+		$currentUserID = $this->Auth->user('id');
+		
+		if (!$userId) {
+			throw new NotFoundException(__('Invalid user'));
+		}
+	
+		// Delete entire conversation
+		$this->Message->deleteAll(array(
+			'OR' => array(
+				'Message.sender_id' => $userId,
+				'Message.receiver_id' => $userId
+			),
+			'Message.status' => 1
+		));
+	
+		$response = array(
+			'status' => 'success',
+			'message' => 'Conversation deleted.',
+		);
+	
+		$this->response->body(json_encode($response));
+	}
+	
 	// For Main/Index Page of Message (Pagination)
 	public function index($page = 1) {
 		$currentUserID = $this->Auth->user('id');
@@ -146,42 +173,7 @@ class MessagesController extends AppController {
 		}
 	}
 
-	// public function delete($id = null) {
-	// 	$this->autoRender = false;
-	// 	$this->response->type('json');
 	
-	// 	if (!$id) {
-	// 		throw new NotFoundException(__('Invalid message'));
-	// 	}
-	
-	// 	$message = $this->Message->findById($id);
-	
-	// 	if (!$message) {
-	// 		$response = array(
-	// 			'status' => 'error',
-	// 			'message' => 'Message not found.',
-	// 		);
-	// 	} else {
-	// 		$currentUserID = $this->Auth->user('id');
-	// 		if ($message['Message']['sender_id'] == $currentUserID || $message['Message']['receiver_id'] == $currentUserID) {
-	// 			// Soft delete by setting status to 0
-	// 			$message['Message']['status'] = 0;
-	// 			$this->Message->save($message);
-	// 			$response = array(
-	// 				'status' => 'success',
-	// 				'message' => 'Message deleted.',
-	// 			);
-	// 		} else {
-	// 			$response = array(
-	// 				'status' => 'error',
-	// 				'message' => 'You are not authorized to delete this message.',
-	// 			);
-	// 		}
-	// 	}
-	
-	// 	$this->response->body(json_encode($response));
-	// }
-
 	public function delete($id = null) {
 		$this->autoRender = false;
 		$this->response->type('json');
@@ -217,15 +209,6 @@ class MessagesController extends AppController {
 		}
 		
 		$this->response->body(json_encode($response));
-	}
-
-	// Example of model callback for soft delete
-	public function beforeDelete($cascade = true) {
-	// Assuming related models are defined as associations
-    // Set the status to 0 (soft delete) instead of removing the record
-    $this->id = $this->id; // Ensure the id is set
-    $this->saveField('status', 0); // Soft delete
-    return false; // Prevent actual deletion if using soft delete
 	}
 
 	public function findMessage() {
